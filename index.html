@@ -210,7 +210,7 @@ function getWeekends() {
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-function fmt(d) { return `${DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()}`; }
+function fmt(d) { return `${DAYS[d.getDay()]} ${d.getMonth()+1}.${String(d.getDate()).padStart(2,'0')}`; }
 
 // ── Build table ─────────────────────────────────────────────────
 function buildTable() {
