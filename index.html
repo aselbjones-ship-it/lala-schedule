@@ -1,0 +1,830 @@
+<!--
+================================================================
+  🌸 LALA WEEKEND SCHEDULE v2 — Firebase Realtime Database
+================================================================
+
+  HOW TO SET UP (takes ~5 minutes):
+
+  STEP 1: Create a free Firebase project
+    → Go to https://console.firebase.google.com/
+    → Click "Add project"
+    → Name it anything (e.g. "lala-schedule") → Continue
+    → Disable Google Analytics (optional) → Create project
+
+  STEP 2: Enable Realtime Database
+    → In the left sidebar: Build → Realtime Database
+    → Click "Create Database"
+    → Choose region: us-central1 → Next
+    → Select "Start in test mode" → Enable
+    → You'll see your Database URL — copy it!
+      (looks like: https://lala-schedule-XXXXX-default-rtdb.firebaseio.com)
+
+  STEP 3: Set public read/write rules (already done in test mode, but to confirm)
+    → In Realtime Database, click the "Rules" tab
+    → Make sure rules look like:
+        {
+          "rules": {
+            ".read": true,
+            ".write": true
+          }
+        }
+    → Click "Publish"
+
+  STEP 4: Paste your Database URL below
+    → Find the line that says: databaseURL: "YOUR_DATABASE_URL_HERE"
+    → Replace YOUR_DATABASE_URL_HERE with your actual URL
+    → Example: databaseURL: "https://lala-schedule-abc12-default-rtdb.firebaseio.com"
+
+  STEP 5: Re-upload to Netlify
+    → Drag the updated file to app.netlify.com → Done! 🎉
+
+  NOTE: Test mode expires after 30 days. When it does, go back to
+  Firebase Rules and re-paste the public rules above.
+================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 Lala Weekend Schedule</title>
+
+<!-- Firebase v10 compat mode (no install needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --purple: #9333ea;
+  --purple-light: #f3e8ff;
+  --purple-mid: #e9d5ff;
+  --pink: #db2777;
+  --pink-light: #fdf2f8;
+  --pink-mid: #fbcfe8;
+  --teal: #0d9488;
+  --teal-light: #f0fdfa;
+  --teal-mid: #99f6e4;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --blue-mid: #bfdbfe;
+  --green-row: #dcfce7;
+  --green-row2: #f0fdf4;
+  --yellow-row: #fefce8;
+  --orange-row: #fff7ed;
+  --red-row: #fff1f2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #fdf4ff;
+  min-height: 100vh;
+  color: var(--gray-800);
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(88, 28, 135, 0.35);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.modal-overlay.hidden { display: none; }
+
+.modal {
+  background: white;
+  border-radius: 24px;
+  padding: 2rem 1.75rem;
+  max-width: 340px;
+  width: 92%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+}
+
+.modal-emoji { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+.modal h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--gray-800);
+  margin-bottom: 0.4rem;
+}
+
+.modal p {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.name-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.name-btn {
+  padding: 0.875rem 0.75rem;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  line-height: 1.2;
+}
+.name-btn:hover  { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.name-btn:active { transform: translateY(0); }
+
+.name-btn-0 { background: var(--purple-light); color: var(--purple); border-color: var(--purple-mid); }
+.name-btn-1 { background: var(--pink-light);   color: var(--pink);   border-color: var(--pink-mid); }
+.name-btn-2 { background: var(--teal-light);   color: var(--teal);   border-color: var(--teal-mid); }
+.name-btn-3 { background: var(--blue-light);   color: var(--blue);   border-color: var(--blue-mid); }
+
+/* ── HEADER ── */
+.header {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 0.875rem 1.25rem;
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.header-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.conn-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--gray-400);
+}
+.conn-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  transition: background 0.3s;
+}
+.conn-dot.live { background: #4ade80; }
+.conn-dot.offline { background: #f87171; }
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  border: none;
+}
+.user-badge:hover { opacity: 0.75; }
+.user-badge.hidden { display: none; }
+
+/* ── FILTER PILLS ── */
+.filters {
+  background: white;
+  padding: 0.625rem 1.25rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+
+.pill {
+  padding: 0.325rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 2px solid transparent;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  transition: all 0.12s;
+}
+.pill:hover  { background: var(--gray-200); }
+.pill.active {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: white;
+}
+
+/* ── SUMMARY BAR ── */
+.summary-bar {
+  background: white;
+  padding: 0.625rem 1.25rem;
+  border-bottom: 2px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.summary-bar::-webkit-scrollbar { display: none; }
+
+.summary-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-400);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.summary-chips { display: flex; gap: 0.4rem; flex-wrap: nowrap; }
+
+.s-chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.s-chip-4 { background: #bbf7d0; color: #14532d; }
+.s-chip-3 { background: #d1fae5; color: #065f46; }
+.s-chip-2 { background: #fef08a; color: #713f12; }
+.s-chip-1 { background: #fed7aa; color: #7c2d12; }
+.s-chip-none { color: var(--gray-400); font-style: italic; font-size: 0.78rem; }
+
+/* ── SCHEDULE GRID ── */
+.schedule-wrap {
+  padding: 1rem 1rem 2rem;
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.day-section { margin-bottom: 1.5rem; }
+
+.day-header {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.6rem;
+  padding: 0 0.25rem;
+}
+
+.sched-table {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--gray-200);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  background: white;
+}
+
+/* Grid: time col + 4 user cols */
+.sched-head,
+.sched-row {
+  display: grid;
+  grid-template-columns: 82px repeat(4, 1fr);
+}
+
+.sched-head {
+  background: var(--gray-50);
+  border-bottom: 1.5px solid var(--gray-200);
+}
+
+.th {
+  padding: 0.6rem 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.th:first-child { text-align: left; align-items: flex-start; padding-left: 0.875rem; }
+
+.th-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.sched-row {
+  border-bottom: 1px solid var(--gray-100);
+  transition: background-color 0.35s ease;
+  min-height: 46px;
+}
+.sched-row:last-child { border-bottom: none; }
+
+/* Row color states */
+.row-4    { background: #bbf7d0; }
+.row-3    { background: #dcfce7; }
+.row-2    { background: #fef9c3; }
+.row-1    { background: #ffedd5; }
+.row-0    { background: #ffe4e6; }
+.row-none { background: white; }
+
+.time-cell {
+  padding: 0 0.875rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+}
+
+.check-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom interactive checkbox (current user) */
+.cb-label { cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cb-label input[type=checkbox] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.cb-box {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--gray-300);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-size: 0.9rem;
+}
+.cb-label:hover .cb-box { border-color: #4ade80; background: #f0fdf4; }
+.cb-label input:checked + .cb-box {
+  background: #4ade80;
+  border-color: #22c55e;
+}
+.cb-label input:checked + .cb-box::after { content: '✓'; color: white; font-weight: 900; font-size: 0.8rem; }
+
+/* Read-only status dot for other users */
+.status-dot {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+.status-dot.free  { background: #4ade80; }
+.status-dot.busy  { background: var(--gray-100); }
+.status-dot.free::after  { content: '✓'; color: white; font-weight: 900; font-size: 0.75rem; }
+.status-dot.busy::after  { content: '–'; color: var(--gray-400); font-weight: 700; }
+
+/* ── LEGEND ── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.875rem 1.25rem;
+  justify-content: center;
+  border-top: 1px solid var(--gray-200);
+  background: white;
+  margin-top: 0.5rem;
+}
+.leg-item {
+  display: flex; align-items: center;
+  gap: 0.375rem;
+  font-size: 0.72rem;
+  color: var(--gray-500);
+}
+.leg-swatch {
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 1.25rem; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--gray-800);
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  z-index: 600;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── CONFIG ERROR ── */
+.config-error {
+  background: #fff1f2;
+  border: 2px solid #fecdd3;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1rem 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #881337;
+}
+.config-error strong { display: block; margin-bottom: 0.4rem; font-size: 0.95rem; }
+.config-error code {
+  background: #ffe4e6;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 460px) {
+  .sched-head, .sched-row { grid-template-columns: 68px repeat(4, 1fr); }
+  .time-cell { font-size: 0.67rem; padding: 0 0.5rem; }
+  .cb-box, .status-dot { width: 26px; height: 26px; }
+  .header-title { font-size: 1.05rem; }
+  .filters { padding: 0.5rem 0.75rem; }
+  .summary-bar { padding: 0.5rem 0.75rem; }
+  .schedule-wrap { padding: 0.75rem 0.625rem 2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ NAME PICKER MODAL ══════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-emoji">🌸</div>
+    <h2>Who are you?</h2>
+    <p>Pick your name to start checking your availability. Your updates sync live for everyone!</p>
+    <div class="name-buttons">
+      <button class="name-btn name-btn-0" onclick="selectUser('Lisa T')">Lisa T</button>
+      <button class="name-btn name-btn-1" onclick="selectUser('Lisa S')">Lisa S</button>
+      <button class="name-btn name-btn-2" onclick="selectUser('Aina')">Aina</button>
+      <button class="name-btn name-btn-3" onclick="selectUser('Asel')">Asel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="header">
+  <div class="header-title">🌸 Lala Weekend</div>
+  <div class="header-right">
+    <div class="conn-indicator" id="connIndicator">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connLabel">connecting…</span>
+    </div>
+    <button class="user-badge hidden" id="userBadge" onclick="switchUser()">
+      <!-- filled by JS -->
+    </button>
+  </div>
+</header>
+
+<!-- ══════════ FILTER PILLS ══════════ -->
+<div class="filters" id="filtersBar">
+  <button class="pill active" data-filter="all"       onclick="setFilter('all')">All</button>
+  <button class="pill"        data-filter="saturday"  onclick="setFilter('saturday')">Saturday</button>
+  <button class="pill"        data-filter="sunday"    onclick="setFilter('sunday')">Sunday</button>
+  <button class="pill"        data-filter="morning"   onclick="setFilter('morning')">Morning</button>
+  <button class="pill"        data-filter="afternoon" onclick="setFilter('afternoon')">Afternoon</button>
+  <button class="pill"        data-filter="evening"   onclick="setFilter('evening')">Evening</button>
+  <button class="pill"        data-filter="night"     onclick="setFilter('night')">Night</button>
+</div>
+
+<!-- ══════════ SUMMARY BAR ══════════ -->
+<div class="summary-bar">
+  <span class="summary-label">Best times:</span>
+  <div class="summary-chips" id="summaryChips">
+    <span class="s-chip-none">loading…</span>
+  </div>
+</div>
+
+<!-- ══════════ CONFIG ERROR (shown if DB not configured) ══════════ -->
+<div class="config-error hidden" id="configError">
+  <strong>⚠️ Firebase not configured yet</strong>
+  Open this HTML file, find the line <code>databaseURL: "YOUR_DATABASE_URL_HERE"</code>,
+  and replace it with your Firebase Realtime Database URL.
+  See the setup instructions at the top of this file for details.
+</div>
+
+<!-- ══════════ SCHEDULE ══════════ -->
+<div class="schedule-wrap" id="scheduleWrap">
+  <!-- filled by JS -->
+</div>
+
+<!-- ══════════ LEGEND ══════════ -->
+<div class="legend">
+  <div class="leg-item"><div class="leg-swatch" style="background:#bbf7d0"></div> All 4 free</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#dcfce7"></div> 3 free</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#fef9c3"></div> 2 free</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#ffedd5"></div> 1 free</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#ffe4e6"></div> All busy</div>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     FIREBASE CONFIG
+     ↓↓↓ REPLACE YOUR_DATABASE_URL_HERE BELOW ↓↓↓
+     ══════════════════════════════════════════════ -->
+<script>
+const FIREBASE_DB_URL = "https://lala-schedule-13f59-default-rtdb.firebaseio.com/";
+
+// ── APP DATA ──────────────────────────────────────────────────
+const USERS = ["Lisa T", "Lisa S", "Aina", "Asel"];
+
+const USER_COLORS = {
+  "Lisa T": { bg: "#9333ea", light: "#f3e8ff", mid: "#e9d5ff", cls: "0" },
+  "Lisa S": { bg: "#db2777", light: "#fdf2f8", mid: "#fbcfe8", cls: "1" },
+  "Aina":   { bg: "#0d9488", light: "#f0fdfa", mid: "#99f6e4", cls: "2" },
+  "Asel":   { bg: "#2563eb", light: "#eff6ff", mid: "#bfdbfe", cls: "3" },
+};
+
+const initials = n => n.split(" ").map(w => w[0]).join("").toUpperCase();
+
+const DAYS = [
+  { key: "saturday", label: "Saturday" },
+  { key: "sunday",   label: "Sunday"   },
+];
+
+const SLOTS = [
+  { key: "s900",  label: "9:00 AM",  period: "morning"   },
+  { key: "s1000", label: "10:00 AM", period: "morning"   },
+  { key: "s1100", label: "11:00 AM", period: "morning"   },
+  { key: "s1200", label: "12:00 PM", period: "afternoon" },
+  { key: "s1300", label: "1:00 PM",  period: "afternoon" },
+  { key: "s1400", label: "2:00 PM",  period: "afternoon" },
+  { key: "s1500", label: "3:00 PM",  period: "afternoon" },
+  { key: "s1600", label: "4:00 PM",  period: "afternoon" },
+  { key: "s1700", label: "5:00 PM",  period: "evening"   },
+  { key: "s1800", label: "6:00 PM",  period: "evening"   },
+  { key: "s1900", label: "7:00 PM",  period: "evening"   },
+  { key: "s2000", label: "8:00 PM",  period: "evening"   },
+  { key: "s2100", label: "9:00 PM",  period: "night"     },
+  { key: "s2200", label: "10:00 PM", period: "night"     },
+];
+
+// ── STATE ──────────────────────────────────────────────────────
+let currentUser   = null;    // string | null
+let currentFilter = "all";
+let scheduleData  = {};
+
+// ── FIREBASE INIT ──────────────────────────────────────────────
+let db = null;
+
+function initFirebase() {
+  if (FIREBASE_DB_URL === "YOUR_DATABASE_URL_HERE" || !FIREBASE_DB_URL) {
+    document.getElementById("configError").classList.remove("hidden");
+    setConnStatus(false);
+    renderSchedule();
+    return;
+  }
+
+  try {
+    const app = firebase.initializeApp({ databaseURL: FIREBASE_DB_URL });
+    db = firebase.database(app);
+
+    db.ref(".info/connected").on("value", snap => {
+      setConnStatus(snap.val() === true);
+    });
+
+    db.ref("schedule").on("value", snap => {
+      const val = snap.val() || {};
+      scheduleData = val;
+      renderSchedule();
+      updateSummary();
+    });
+
+  } catch (e) {
+    console.error("Firebase init error:", e);
+    document.getElementById("configError").classList.remove("hidden");
+    setConnStatus(false);
+    renderSchedule();
+  }
+}
+
+function setConnStatus(live) {
+  const dot   = document.getElementById("connDot");
+  const label = document.getElementById("connLabel");
+  if (live) {
+    dot.className = "conn-dot live";
+    label.textContent = "live";
+  } else {
+    dot.className = "conn-dot offline";
+    label.textContent = FIREBASE_DB_URL === "YOUR_DATABASE_URL_HERE" ? "not set up" : "offline";
+  }
+}
+
+function selectUser(name) {
+  currentUser = name;
+  localStorage.setItem("lalaUser", name);
+  document.getElementById("modalOverlay").classList.add("hidden");
+  renderUserBadge();
+  renderSchedule();
+  showToast("Welcome, " + name + "! 諫");
+}
+
+function switchUser() {
+  document.getElementById("modalOverlay").classList.remove("hidden");
+}
+
+function renderUserBadge() {
+  const badge = document.getElementById("userBadge");
+  if (!currentUser) { badge.classList.add("hidden"); return; }
+  const c = USER_COLORS[currentUser];
+  badge.innerHTML = `
+    <div style="width:18px;height:18px;border-radius:50%;background:${c.bg};
+         display:flex;align-items:center;justify-content:center;
+         font-size:0.58rem;font-weight:800;color:white;">${initials(currentUser)}</div>
+    <span style="color:${c.bg}">${currentUser}</span>
+    <span style="font-size:0.65rem;color:var(--gray-400)">change</span>
+  `;
+  badge.style.background = c.light;
+  badge.classList.remove("hidden");
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll(".pill").forEach(p => {
+    p.classList.toggle("active", p.dataset.filter === f);
+  });
+  renderSchedule();
+}
+
+function slotVisible(dayKey, slot) {
+  if (currentFilter === "all")       return true;
+  if (currentFilter === "saturday")  return dayKey === "saturday";
+  if (currentFilter === "sunday")    return dayKey === "sunday";
+  return slot.period === currentFilter;
+}
+
+function toggleSlot(dayKey, slotKey, checked) {
+  if (!currentUser || !db) return;
+  const path = `schedule/${dayKey}/${slotKey}/${currentUser.replace(/ /g, "_")}`;
+  db.ref(path).set(checked);
+}
+
+function getUserVal(dayKey, slotKey, user) {
+  const safeUser = user.replace(/ /g, "_");
+  return !!(scheduleData[dayKey] &&
+            scheduleData[dayKey][slotKey] &&
+            scheduleData[dayKey][slotKey][safeUser]);
+}
+
+function countFree(dayKey, slotKey) {
+  return USERS.filter(u => getUserVal(dayKey, slotKey, u)).length;
+}
+
+function rowClass(freeCount) {
+  const cls = ["row-none","row-0","row-1","row-2","row-3","row-4"];
+  return cls[freeCount] || "row-none";
+}
+
+function renderSchedule() {
+  const wrap = document.getElementById("scheduleWrap");
+  let html = "";
+
+  for (const day of DAYS) {
+    const visibleSlots = SLOTS.filter(s => slotVisible(day.key, s));
+    if (!visibleSlots.length) continue;
+
+    html += `<div class="day-section">
+      <div class="day-header">📅 ${day.label}</div>
+      <div class="sched-table">
+        <div class="sched-head">
+          <div class="th" style="font-size:0.65rem">Time</div>`;
+
+    for (const user of USERS) {
+      const c = USER_COLORS[user];
+      const isMe = user === currentUser;
+      html += `<div class="th">
+        <div class="th-avatar" style="background:${c.bg}">${initials(user)}</div>
+        <span style="${isMe ? `color:${c.bg};` : ""}">${isMe ? "You" : user.split(" ")[0]}</span>
+      </div>`;
+    }
+
+    html += `</div>`;
+
+    for (const slot of visibleSlots) {
+      const free = countFree(day.key, slot.key);
+      const rc = rowClass(free);
+
+      html += `<div class="sched-row ${rc}" id="row-${day.key}-${slot.key}">
+        <div class="time-cell">${slot.label}</div>`;
+
+      for (const user of USERS) {
+        const isMe  = user === currentUser;
+        const isChk = getUserVal(day.key, slot.key, user);
+        const safeDay  = day.key;
+        const safeSlot = slot.key;
+
+        if (isMe) {
+          html += `<div class="check-cell">
+            <label class="cb-label">
+              <input type="checkbox"
+                     id="cb-${safeDay}-${safeSlot}"
+                     ${isChk ? "checked" : ""}
+                     onchange="toggleSlot('${safeDay}','${safeSlot}',this.checked)">
+              <div class="cb-box"></div>
+            </label>
+          </div>`;
+        } else {
+          html += `<div class="check-cell">
+            <div class="status-dot ${isChk ? "free" : "busy"}"></div>
+          </div>`;
+        }
+      }
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  if (!html) {
+    html = `<div style="text-align:center;padding:2rem;color:var(--gray-400)">
+              No slots match this filter.
+            </div>`;
+  }
+
+  wrap.innerHTML = html;
+}
+
+function updateSummary() {
+  const candidates = [];
+  for (const day of DAYS) {
+    for (const slot of SLOTS) {
+      if (!slotVisible(day.key, slot)) continue;
+      const free = countFree(day.key, slot.key);
+      if (free > 0) {
+        candidates.push({ free, label: `${day.label.slice(0,3)} ${slot.label}`, day: day.key, slotKey: slot.key });
+      }
+    }
+  }
+
+  candidates.sort((a, b) => b.free - a.free);
+  const top = candidates.slice(0, 6);
+
+  const chips = document.getElementById("summaryChips");
+  if (!top.length) {
+    chips.innerHTML = `<span class="s-chip-none">No availability marked yet</span>`;
+    return;
+  }
+
+  chips.innerHTML = top.map(t =>
+    `<span class="s-chip s-chip-${t.free}">${t.label} (${t.free}/4)</span>`
+  ).join("");
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem("lalaUser");
+  if (saved && USERS.includes(saved)) {
+    currentUser = saved;
+    document.getElementById("modalOverlay").classList.add("hidden");
+    renderUserBadge();
+  }
+
+  initFirebase
