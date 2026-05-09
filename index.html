@@ -9,134 +9,347 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; min-height: 100vh; }
-  header { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 24px 20px; text-align: center; box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
-  header h1 { font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 700; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white; padding: 24px 20px; text-align: center;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+  }
+  header h1 { font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 700; letter-spacing: -0.5px; }
   header p { opacity: 0.85; margin-top: 6px; font-size: 0.9rem; }
-  #name-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+
+  /* Name picker */
+  #name-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
   #name-modal.hidden { display: none; }
-  .modal-box { background: white; border-radius: 20px; padding: 32px 28px; text-align: center; max-width: 340px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal-box {
+    background: white; border-radius: 20px; padding: 32px 28px;
+    text-align: center; max-width: 340px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
   .modal-box h2 { font-size: 1.3rem; margin-bottom: 8px; color: #1f2937; }
   .modal-box p { color: #6b7280; font-size: 0.9rem; margin-bottom: 24px; }
-  .name-btn { display: block; width: 100%; padding: 14px; margin-bottom: 12px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; font-size: 1rem; font-weight: 600; color: #374151; cursor: pointer; transition: all 0.15s; }
+  .name-btn {
+    display: block; width: 100%; padding: 14px;
+    margin-bottom: 12px; border: 2px solid #e5e7eb;
+    border-radius: 12px; background: white; font-size: 1rem;
+    font-weight: 600; color: #374151; cursor: pointer;
+    transition: all 0.15s;
+  }
   .name-btn:hover { border-color: #6366f1; color: #6366f1; background: #f0f0ff; }
-  #user-badge { background: white; margin: 16px auto; padding: 10px 16px; border-radius: 50px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #374151; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; }
+  .name-btn:last-child { margin-bottom: 0; }
+
+  /* User badge */
+  #user-badge {
+    background: white; margin: 16px auto; padding: 10px 16px;
+    border-radius: 50px; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.85rem; color: #374151; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+  }
   #user-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
   #user-badge .dot.offline { background: #ef4444; }
   #badge-wrap { text-align: center; }
+
+  /* Table container */
   .table-wrap { overflow-x: auto; padding: 0 12px 24px; max-width: 800px; margin: 0 auto; }
-  table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
-  thead th { background: #6366f1; color: white; padding: 14px 10px; font-size: 0.85rem; font-weight: 600; text-align: center; white-space: nowrap; }
+
+  table { width: 100%; border-collapse: collapse; background: white;
+    border-radius: 16px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
+
+  thead th {
+    background: #6366f1; color: white; padding: 14px 10px;
+    font-size: 0.85rem; font-weight: 600; text-align: center;
+    white-space: nowrap;
+  }
   thead th:first-child { text-align: left; padding-left: 16px; min-width: 160px; }
-  .month-row td { background: #f3f4f6; font-weight: 700; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; padding: 10px 16px; border-top: 1px solid #e5e7eb; }
+
+  /* Month header rows */
+  .month-row td {
+    background: #f3f4f6; font-weight: 700; font-size: 0.8rem;
+    color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px;
+    padding: 10px 16px; border-top: 1px solid #e5e7eb;
+  }
+
+  /* Weekend rows */
+  tbody tr.weekend-row { transition: background 0.2s; }
   tbody tr.weekend-row td { padding: 10px 8px; border-bottom: 1px solid #f0f0f0; }
   tbody tr.weekend-row td:first-child { padding-left: 16px; font-size: 0.82rem; color: #374151; }
+
+  /* Row colors */
   .row-free { background: #f0fdf4 !important; }
   .row-busy { background: #fef2f2 !important; }
   .row-mixed { background: #fffbeb !important; }
+
+  /* Checkbox cells */
   .check-cell { text-align: center; vertical-align: middle; }
   .check-cell input[type=checkbox] { display: none; }
-  .check-cell label { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 2px solid #d1d5db; background: white; cursor: pointer; transition: all 0.15s; }
-  .check-cell input:checked + label { background: #6366f1; border-color: #6366f1; }
-  .check-cell input:checked + label::after { content: '\u2713'; color: white; font-weight: 700; }
+  .check-cell label {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 2px solid #d1d5db; background: white; cursor: pointer;
+    transition: all 0.15s; font-size: 1rem;
+  }
+  .check-cell input:checked + label {
+    background: #fee2e2; border-color: #ef4444;
+  }
+  .check-cell input:checked + label::after { content: '\D7'; color: #ef4444; font-weight: 900; font-size: 1.2rem; line-height: 1; }
   .check-cell label:not(.mine) { cursor: default; pointer-events: none; }
-  .check-cell label.other-checked { background: #e0e7ff; border-color: #6366f1; }
-  .check-cell label.other-checked::after { content: '\u2713'; color: #6366f1; font-weight: 700; }
+  .check-cell label.other-checked {
+    background: #fee2e2; border-color: #ef4444;
+  }
+  .check-cell label.other-checked::after { content: '\D7'; color: #ef4444; font-weight: 900; font-size: 1.2rem; line-height: 1; }
+
+  /* Status badge */
   .status-cell { text-align: center; }
-  .status-pill { display: inline-block; padding: 3px 10px; border-radius: 50px; font-size: 0.72rem; font-weight: 600; }
+  .status-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 50px;
+    font-size: 0.72rem; font-weight: 600;
+  }
   .pill-free { background: #dcfce7; color: #166534; }
   .pill-busy { background: #fee2e2; color: #991b1b; }
   .pill-mixed { background: #fef9c3; color: #854d0e; }
-  #summary { max-width: 800px; margin: 0 auto 24px; padding: 0 12px; display: flex; gap: 10px; flex-wrap: wrap; }
-  .summary-card { flex: 1; min-width: 100px; background: white; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+  /* Summary */
+  #summary {
+    max-width: 800px; margin: 0 auto 24px; padding: 0 12px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .summary-card {
+    flex: 1; min-width: 100px; background: white; border-radius: 12px;
+    padding: 14px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
   .summary-card .num { font-size: 1.8rem; font-weight: 700; }
   .summary-card .lbl { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
-  .num-free { color: #16a34a; } .num-mixed { color: #d97706; } .num-busy { color: #dc2626; }
+  .num-free { color: #16a34a; }
+  .num-mixed { color: #d97706; }
+  .num-busy { color: #dc2626; }
 </style>
 </head>
 <body>
+
+<!-- Name picker modal -->
 <div id="name-modal">
   <div class="modal-box">
-    <h2>Who are you?</h2>
-    <p>Pick your name to check off your busy weekends</p>
+    <h2>👋 Who are you?</h2>
+    <p>Pick your name to start checking off your busy weekends</p>
     <button class="name-btn" onclick="setUser('Lisa T')">Lisa T</button>
     <button class="name-btn" onclick="setUser('Lisa S')">Lisa S</button>
     <button class="name-btn" onclick="setUser('Aina')">Aina</button>
     <button class="name-btn" onclick="setUser('Asel')">Asel</button>
   </div>
 </div>
+
 <header>
-  <h1>Lala Schedule 2026</h1>
-  <p>Check the weekends you have plans. Green = everyone's free!</p>
+  <h1>🗓 Lala Schedule 2026</h1>
+  <p>Check the weekends you have plans. 🟢 Green = everyone's free!</p>
 </header>
+
 <div id="badge-wrap">
   <div id="user-badge" onclick="changeUser()">
     <span class="dot" id="conn-dot"></span>
     <span id="badge-name">...</span>
-    <span style="color:#9ca3af;font-size:0.8rem">tap to change</span>
+    <span style="color:#9ca3af; font-size:0.8rem">· tap to change</span>
   </div>
 </div>
+
 <div id="summary">
-  <div class="summary-card"><div class="num num-free" id="cnt-free">-</div><div class="lbl">Weekends free</div></div>
-  <div class="summary-card"><div class="num num-mixed" id="cnt-mixed">-</div><div class="lbl">Partially free</div></div>
-  <div class="summary-card"><div class="num num-busy" id="cnt-busy">-</div><div class="lbl">All busy</div></div>
+  <div class="summary-card"><div class="num num-free" id="cnt-free">—</div><div class="lbl">Weekends free</div></div>
+  <div class="summary-card"><div class="num num-mixed" id="cnt-mixed">—</div><div class="lbl">Partially free</div></div>
+  <div class="summary-card"><div class="num num-busy" id="cnt-busy">—</div><div class="lbl">All busy</div></div>
 </div>
+
 <div class="table-wrap">
-  <table>
-    <thead><tr><th>Weekend</th><th>Lisa T</th><th>Lisa S</th><th>Aina</th><th>Asel</th><th>Status</th></tr></thead>
+  <table id="schedule-table">
+    <thead>
+      <tr>
+        <th>Weekend</th>
+        <th>Lisa T</th>
+        <th>Lisa S</th>
+        <th>Aina</th>
+        <th>Asel</th>
+        <th>Status</th>
+      </tr>
+    </thead>
     <tbody id="table-body"></tbody>
   </table>
 </div>
+
 <script>
-const firebaseConfig = { databaseURL: "https://lala-schedule-13f59-default-rtdb.firebaseio.com/" };
+// ── Firebase setup ──────────────────────────────────────────────
+const firebaseConfig = {
+  databaseURL: "https://lala-schedule-13f59-default-rtdb.firebaseio.com/"
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const ref = db.ref('schedule');
-const NAMES = ['Lisa T','Lisa S','Aina','Asel'];
+
+// ── State ───────────────────────────────────────────────────────
+const NAMES = ['Lisa T', 'Lisa S', 'Aina', 'Asel'];
 let currentUser = localStorage.getItem('lala-user') || null;
 let dbData = {};
+
+// ── Weekends for rest of 2026 ───────────────────────────────────
 function getWeekends() {
-  const w = []; let d = new Date(2026,4,15);
-  const end = new Date(2026,11,27);
-  while (d <= end) { if (d.getDay()===5) { const f=new Date(d),s=new Date(d); s.setDate(s.getDate()+2); w.push({fri:f,sun:s,key:f.toISOString().slice(0,10)}); } d.setDate(d.getDate()+1); }
-  return w;
+  const weekends = [];
+  const start = new Date(2026, 4, 15); // May 15
+  const end = new Date(2026, 11, 27);  // Dec 27
+  let d = new Date(start);
+  while (d <= end) {
+    if (d.getDay() === 5) { // Friday
+      const fri = new Date(d);
+      const sun = new Date(d); sun.setDate(sun.getDate() + 2);
+      weekends.push({ fri, sun, key: fri.toISOString().slice(0,10) });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return weekends;
 }
-const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DA=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-function fmt(d){return DA[d.getDay()]+' '+MO[d.getMonth()]+' '+d.getDate();}
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function fmt(d) { return `${DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()}`; }
+
+// ── Build table ─────────────────────────────────────────────────
 function buildTable() {
-  const tb=document.getElementById('table-body'); tb.innerHTML=''; let lm=-1;
-  getWeekends().forEach(({fri,sun,key})=>{
-    if(fri.getMonth()!==lm){lm=fri.getMonth();const r=document.createElement('tr');r.className='month-row';r.innerHTML='<td colspan="6">'+MO[fri.getMonth()]+' 2026</td>';tb.appendChild(r);}
-    const tr=document.createElement('tr'); tr.className='weekend-row'; tr.id='row-'+key;
-    let c='<td>'+fmt(fri)+' - '+fmt(sun)+'</td>';
-    NAMES.forEach(n=>{const id='cb-'+key+'-'+n.replace(' ','');const m=n===currentUser;c+='<td class="check-cell"><input type="checkbox" id="'+id+'" data-key="'+key+'" data-name="'+n+'" '+(m?'':'disabled')+'><label for="'+id+'" class="'+(m?'mine':'')+'"></label></td>';});
-    c+='<td class="status-cell"><span class="status-pill" id="pill-'+key+'">-</span></td>';
-    tr.innerHTML=c; tb.appendChild(tr);
-    NAMES.forEach(n=>{if(n===currentUser){const cb=document.getElementById('cb-'+key+'-'+n.replace(' ',''));if(cb)cb.addEventListener('change',()=>{ref.child(key).child(n.replace(' ','_')).set(cb.checked);});}});
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  const weekends = getWeekends();
+  let lastMonth = -1;
+
+  weekends.forEach(({ fri, sun, key }) => {
+    if (fri.getMonth() !== lastMonth) {
+      lastMonth = fri.getMonth();
+      const mrow = document.createElement('tr');
+      mrow.className = 'month-row';
+      mrow.innerHTML = `<td colspan="6">${MONTHS[fri.getMonth()]} 2026</td>`;
+      tbody.appendChild(mrow);
+    }
+
+    const tr = document.createElement('tr');
+    tr.className = 'weekend-row';
+    tr.id = `row-${key}`;
+
+    let cells = `<td>${fmt(fri)} – ${fmt(sun)}</td>`;
+    NAMES.forEach(name => {
+      const id = `cb-${key}-${name.replace(' ','')}`;
+      const isMine = name === currentUser;
+      cells += `<td class="check-cell">
+        <input type="checkbox" id="${id}" data-key="${key}" data-name="${name}" ${isMine ? '' : 'disabled'}>
+        <label for="${id}" class="${isMine ? 'mine' : ''}"></label>
+      </td>`;
+    });
+    cells += `<td class="status-cell"><span class="status-pill" id="pill-${key}">—</span></td>`;
+    tr.innerHTML = cells;
+    tbody.appendChild(tr);
+
+    // checkbox change → write to Firebase
+    NAMES.forEach(name => {
+      if (name === currentUser) {
+        const cb = document.getElementById(`cb-${key}-${name.replace(' ','')}`);
+        if (cb) cb.addEventListener('change', () => {
+          ref.child(key).child(name.replace(' ','_')).set(cb.checked);
+        });
+      }
+    });
   });
+
   applyDbData();
 }
+
+// ── Apply database state to UI ──────────────────────────────────
 function applyDbData() {
-  let fr=0,mx=0,bu=0;
-  getWeekends().forEach(({key})=>{
-    const w=dbData[key]||{}; let cnt=0;
-    NAMES.forEach(n=>{const k=n.replace(' ','_');const chk=!!w[k];const cb=document.getElementById('cb-'+key+'-'+n.replace(' ',''));const lb=cb?cb.nextElementSibling:null;if(cb){cb.checked=chk;if(lb&&n!==currentUser)lb.classList.toggle('other-checked',chk);}if(chk)cnt++;});
-    const row=document.getElementById('row-'+key),pill=document.getElementById('pill-'+key);
-    if(!row||!pill)return;
+  const weekends = getWeekends();
+  let free = 0, mixed = 0, busy = 0;
+
+  weekends.forEach(({ key }) => {
+    const wkData = dbData[key] || {};
+    let checkedCount = 0;
+    NAMES.forEach(name => {
+      const dbKey = name.replace(' ','_');
+      const checked = !!wkData[dbKey];
+      const id = `cb-${key}-${name.replace(' ','')}`;
+      const cb = document.getElementById(id);
+      const lbl = cb ? cb.nextElementSibling : null;
+      if (cb) {
+        cb.checked = checked;
+        if (lbl && name !== currentUser) {
+          lbl.classList.toggle('other-checked', checked);
+        }
+      }
+      if (checked) checkedCount++;
+    });
+
+    const row = document.getElementById(`row-${key}`);
+    const pill = document.getElementById(`pill-${key}`);
+    if (!row || !pill) return;
+
     row.classList.remove('row-free','row-mixed','row-busy');
-    if(cnt===0){row.classList.add('row-free');pill.className='status-pill pill-free';pill.textContent='All free!';fr++;}
-    else if(cnt===NAMES.length){row.classList.add('row-busy');pill.className='status-pill pill-busy';pill.textContent='All busy';bu++;}
-    else{row.classList.add('row-mixed');pill.className='status-pill pill-mixed';pill.textContent=cnt+'/'+NAMES.length+' busy';mx++;}
+    if (checkedCount === 0) {
+      row.classList.add('row-free');
+      pill.className = 'status-pill pill-free';
+      pill.textContent = 'All free 🎉';
+      free++;
+    } else if (checkedCount === NAMES.length) {
+      row.classList.add('row-busy');
+      pill.className = 'status-pill pill-busy';
+      pill.textContent = 'All busy';
+      busy++;
+    } else {
+      row.classList.add('row-mixed');
+      pill.className = 'status-pill pill-mixed';
+      pill.textContent = `${checkedCount}/${NAMES.length} busy`;
+      mixed++;
+    }
   });
-  document.getElementById('cnt-free').textContent=fr;
-  document.getElementById('cnt-mixed').textContent=mx;
-  document.getElementById('cnt-busy').textContent=bu;
+
+  document.getElementById('cnt-free').textContent = free;
+  document.getElementById('cnt-mixed').textContent = mixed;
+  document.getElementById('cnt-busy').textContent = busy;
 }
-function setUser(name){currentUser=name;localStorage.setItem('lala-user',name);document.getElementById('name-modal').classList.add('hidden');document.getElementById('badge-name').textContent=name;buildTable();}
-function changeUser(){localStorage.removeItem('lala-user');currentUser=null;document.getElementById('name-modal').classList.remove('hidden');}
-firebase.database().ref('.info/connected').on('value',s=>{document.getElementById('conn-dot').classList.toggle('offline',!s.val());});
-ref.on('value',s=>{dbData=s.val()||{};applyDbData();});
-if(currentUser){document.getElementById('name-modal').classList.add('hidden');document.getElementById('badge-name').textContent=currentUser;}
-buildTable();
+
+// ── User management ─────────────────────────────────────────────
+function setUser(name) {
+  currentUser = name;
+  localStorage.setItem('lala-user', name);
+  document.getElementById('name-modal').classList.add('hidden');
+  document.getElementById('badge-name').textContent = name;
+  buildTable();
+}
+
+function changeUser() {
+  localStorage.removeItem('lala-user');
+  currentUser = null;
+  document.getElementById('name-modal').classList.remove('hidden');
+}
+
+// ── Connection status ───────────────────────────────────────────
+firebase.database().ref('.info/connected').on('value', snap => {
+  const dot = document.getElementById('conn-dot');
+  if (snap.val()) {
+    dot.classList.remove('offline');
+  } else {
+    dot.classList.add('offline');
+  }
+});
+
+// ── Firebase listener ───────────────────────────────────────────
+ref.on('value', snap => {
+  dbData = snap.val() || {};
+  applyDbData();
+});
+
+// ── Init ────────────────────────────────────────────────────────
+if (currentUser) {
+  document.getElementById('name-modal').classList.add('hidden');
+  document.getElementById('badge-name').textContent = currentUser;
+  buildTable();
+} else {
+  // still build table for visual, just no user yet
+  buildTable();
+}
 </script>
 </body>
 </html>
